@@ -9,21 +9,13 @@ $packages = @(
     @{ Id = "CoreyButler.NVMforWindows" },
     @{ Id = "Git.Git" },
     @{ Id = "Microsoft.VisualStudioCode" },
-    @{ Id = "Microsoft.VisualStudio.2022.Enterprise" },
-    @{ Id = "CodecGuide.K-LiteCodecPack.Standard" },
-    @{ Id = "3TSoftwareLabs.Studio3T" },
     @{ Id = "Microsoft.DotNet.SDK.8" },
-    @{ Id = "Microsoft.DotNet.SDK.9" },
     @{ Id = "Microsoft.Powershell" },
-    @{ Id = "Logitech.LogiTune" },
-    @{ Id = "Mobatek.MobaXterm" },
     @{ Id = "JanDeDobbeleer.OhMyPosh" },
-    @{ Id = "Postman.Postman" },
-    @{ Id = "Telegram.TelegramDesktop" },
-    @{ Id = "Insomnia.Insomnia" },
     @{ Id = "DevToys-app.DevToys" },
-    @{ Id = "DBeaver.DBeaver.Community" },
-    @{ Id = "GitHub.cli" }
+    @{ Id = "GitHub.cli" },
+    @{ Id = "LocalSend.LocalSend" },
+    @{ Id = "Bitwarden.Bitwarden" }
 )
 
 Write-Host "🔧 Instalando pacotes via Winget..." -ForegroundColor Cyan
@@ -110,25 +102,34 @@ if (Test-Path $PROFILE) {
     Write-Host "ℹ️ Arquivo de perfil do PowerShell ainda não existe." -ForegroundColor Yellow
 }
 
+
 Write-Host "`n✅ Instalando Terminal-Icons" -ForegroundColor Green
 Install-Module -Name Terminal-Icons -Repository PSGallery -Force -Confirm:$false
 
-Write-Host "`n✅ Configurando Oh My Posh" -ForegroundColor Green
+# Oh My Posh
 
-Write-Host "`n✅    Instalando a fonte meslo" -ForegroundColor Green
-oh-my-posh font install meslo
+$opcao_oh_my_posh = Read-Host "Deseja instalar configurar - Oh My Posh? (Y)es / (N)o"
 
-Write-Host "`n✅    Cria o arquivo de perfil do PowerShell" -ForegroundColor Green
-New-Item -Path $PROFILE -Type File -Force
+if ($opcao_oh_my_posh -match '^(Y|y)$') {
+    Write-Host "`n✅ Configurando Oh My Posh" -ForegroundColor Green
 
-Write-Host "`n✅    Criando conteúdo para o arquivo do perfil" -ForegroundColor Green
-$conteudo = @"
-oh-my-posh init pwsh --config 'C:\Users\$env:USERNAME\AppData\Local\Programs\oh-my-posh\themes\craver.omp.json' | Invoke-Expression
-Import-Module -Name Terminal-Icons
+    Write-Host "`n✅    Instalando a fonte meslo" -ForegroundColor Green
+    oh-my-posh font install meslo
+
+    Write-Host "`n✅    Cria o arquivo de perfil do PowerShell" -ForegroundColor Green
+    New-Item -Path $PROFILE -Type File -Force
+
+    Write-Host "`n✅    Criando conteúdo para o arquivo do perfil" -ForegroundColor Green
+    $conteudo = @"
+    oh-my-posh init pwsh --config 'C:\Users\$env:USERNAME\AppData\Local\Programs\oh-my-posh\themes\craver.omp.json' | Invoke-Expression
+    Import-Module -Name Terminal-Icons
 "@
 
-Write-Host "`n✅    Escrevendo o conteúdo no arquivo do perfil" -ForegroundColor Green
-Set-Content -Path $PROFILE -Value $conteudo
+    Write-Host "`n✅    Escrevendo o conteúdo no arquivo do perfil" -ForegroundColor Green
+    Set-Content -Path $PROFILE -Value $conteudo
+}else {
+    Write-Host "`nConfiguração do - Oh My Posh - cancelada pelo usuário." -ForegroundColor Yellow
+}
 
 # WSL2
 $opcao = Read-Host "Deseja instalar o WSL2 com Ubuntu 24.04? (Y)es / (N)o"
