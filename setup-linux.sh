@@ -96,8 +96,7 @@ else
     echo -e "\n${GREEN}✅     Azure CLI instalado com sucesso. ${NC}"
 fi
 
-### .NET - SEÇÃO CORRIGIDA
-
+### .NET 
 echo -e "\n${BLUE}📦 Verificando se o .NET já está instalado... ${NC}"
 
 if command -v dotnet &> /dev/null; then
@@ -105,40 +104,30 @@ if command -v dotnet &> /dev/null; then
 else
     echo -e "\n📦${YELLOW} Instalando .NET... ${NC}"
     
-    # Criar diretório temporário para download
-    TEMP_DIR=$(mktemp -d)
-    cd "$TEMP_DIR"
-    
-    # Baixar o script de instalação
-    curl -L https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
-    
-    # Verificar se o download foi bem-sucedido
-    if [ ! -f dotnet-install.sh ]; then
-        echo -e "${RED}❌ Erro ao baixar o script de instalação do .NET${NC}"
-        cd - > /dev/null
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
-    
-    # Dar permissão de execução (com sudo se necessário)
-    if ! chmod +x ./dotnet-install.sh; then
-        echo -e "${YELLOW}⚠️ Tentando com sudo...${NC}"
-        sudo chmod +x ./dotnet-install.sh
-    fi
-    
-    # Executar a instalação
-    if ./dotnet-install.sh --channel 8.0; then
-        echo -e "\n✅${GREEN} .NET instalado com sucesso. ${NC}"
+    # Método pipe direto - evita problemas de chmod
+    if curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0; then
+        echo -e "\n✅${GREEN} .NET instalado com sucesso via pipe. ${NC}"
+    elif wget -qO- https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0; then
+        echo -e "\n✅${GREEN} .NET instalado com sucesso via wget. ${NC}"
     else
-        echo -e "\n${RED}❌ Erro na instalação do .NET${NC}"
-        cd - > /dev/null
-        rm -rf "$TEMP_DIR"
-        exit 1
+        # Método alternativo usando /tmp (último recurso)
+        echo -e "\n${YELLOW}⚠️ Tentando método alternativo via /tmp...${NC}"
+        TEMP_SCRIPT="/tmp/dotnet-install-$$.sh"
+        
+        if curl -sSL https://dot.net/v1/dotnet-install.sh > "$TEMP_SCRIPT"; then
+            if bash "$TEMP_SCRIPT" --channel 8.0; then
+                echo -e "\n✅${GREEN} .NET instalado com sucesso via /tmp. ${NC}"
+                rm -f "$TEMP_SCRIPT"
+            else
+                echo -e "\n${RED}❌ Falha na instalação do .NET${NC}"
+                rm -f "$TEMP_SCRIPT"
+                exit 1
+            fi
+        else
+            echo -e "\n${RED}❌ Não foi possível baixar o installer do .NET${NC}"
+            exit 1
+        fi
     fi
-    
-    # Voltar ao diretório original e limpar arquivos temporários
-    cd - > /dev/null
-    rm -rf "$TEMP_DIR"
 fi
 
 # ✅ Configura as variáveis de ambiente, mesmo que o .NET já esteja instalado
@@ -153,6 +142,13 @@ if ! grep -q "DOTNET_ROOT" ~/.bashrc; then
     echo "export DOTNET_ROOT=\$HOME/.dotnet" >> ~/.bashrc
     echo "export PATH=\$PATH:\$DOTNET_ROOT:\$DOTNET_ROOT/tools" >> ~/.bashrc
     echo -e "${GREEN}✅ Variáveis de ambiente do .NET adicionadas ao ~/.bashrc${NC}"
+fi
+
+# Verificar se a instalação funcionou
+if command -v dotnet &> /dev/null; then
+    echo -e "${GREEN}✅ .NET instalado com sucesso. Versão: $(dotnet --version)${NC}"
+else
+    echo -e "${RED}❌ .NET não foi encontrado após a instalação${NC}"
 fi
 
 ### yq
@@ -234,13 +230,18 @@ fi
 
 echo -e "\n ${BLUE}Verificando o NVM...${NC}"
 
-if nvm >/dev/null 2>&1; then
+if command -v nvm >/dev/null 2>&1; then
     echo -e "\n✅ ${GREEN}NVM já está instalado.${NC}"
 else
     echo -e "\n📥 ${YELLOW}NVM não encontrado. Instalando...${NC}"
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    
+    # Carregar NVM no ambiente atual
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-    if nvm >/dev/null 2>&1; then
+    if command -v nvm >/dev/null 2>&1; then
         echo -e "\n✅ ${GREEN}NVM instalado com sucesso!${NC}"
     else
         echo -e "\n❌ ${RED}Falha ao instalar o NVM.${NC}"
